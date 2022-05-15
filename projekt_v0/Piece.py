@@ -35,6 +35,9 @@ class Piece:
     def __str__(self):
         return self.name
 
+    def move(self, pos):
+        return -1
+
 
 class King(Piece):
     name = "King"
@@ -47,6 +50,13 @@ class King(Piece):
         else:
             self.short_name = "b" + King.name[0]
 
+    def get_pot_moves(self, pos):
+        legit_moves = [pos-9, pos-8, pos-7,
+                       pos-1,        pos+1,
+                       pos+7, pos+8, pos+9]
+
+        return legit_moves
+
 
 class Pawn(Piece):
     name = "Pawn"
@@ -58,3 +68,40 @@ class Pawn(Piece):
             self.short_name = "w" + Pawn.name[0]
         else:
             self.short_name = "b" + Pawn.name[0]
+
+    def get_pot_moves(self, pos):
+        if self.color:  # white pawn
+            if 8 <= pos <= 15:
+                legit_moves = [pos + 8, pos + 16]
+            else:
+                legit_moves = [pos + 8]
+        else:  # black pawn
+            if 8 <= pos <= 15:
+                legit_moves = [pos - 8, pos - 16]
+            else:
+                legit_moves = [pos + 8]
+        return legit_moves
+
+class Rook(Piece):
+    name = "Rook"
+    value = 1
+
+    def __init__(self, color):
+        super().__init__(color)
+        if color:
+            self.short_name = "w" + Rook.name[0]
+        else:
+            self.short_name = "b" + Rook.name[0]
+
+    def get_pot_moves(self, pos):
+        if self.color:  # white pawn
+            if 8 <= pos <= 15:
+                legit_moves = [pos + 8, pos + 16]
+            else:
+                legit_moves = [pos + 8]
+        else:  # black pawn
+            if 8 <= pos <= 15:
+                legit_moves = [pos - 8, pos - 16]
+            else:
+                legit_moves = [pos + 8]
+        return legit_moves
