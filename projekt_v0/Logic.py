@@ -135,8 +135,9 @@ class Chessboard:
 
         # find legit moves to the right
         can_search = True
-        while can_search:
-            if
+
+        #while can_search:
+         #   if
 
         return legit_moves
 
