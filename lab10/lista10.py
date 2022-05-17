@@ -79,9 +79,9 @@ class MainFrame(tk.Frame):
         file_menu = tk.Menu(self.menubar, tearoff=0)  # tearoff decyduje, czy można oddzielić menu
         for label, command, shortcut_text, shortcut in (
                 ("Załaduj inną konfigurację", self.load_config, "Ctrl+N", "<Control-n>"),
-                ("Zapisz konfigurację użytkownika", self.save_config, "Ctrl+S", "<Control-s>"),
+                ("Zapisz konfigurację użytkownika", self.save_config, "Ctrl+M", "<Control-m>"),
                 ("Otwórz plik z danymi covid", self.open_covid, "Ctrl+O", "<Control-o>"),
-                ("Zapisz wyniki programu", self.save_result, "Ctrl+O", "<Control-o>"),
+                ("Zapisz wyniki programu", self.save_result, "Ctrl+S", "<Control-s>"),
                 (None, None, None, None),
                 ("Wyjdź", self.file_quit, "Ctrl+Q", "<Control-q>")):
             if label is None:
@@ -95,9 +95,9 @@ class MainFrame(tk.Frame):
     def dodaj_menu_help(self):
         fileMenu = tk.Menu(self.menubar, tearoff=0)
         for label, command, shortcut_text, shortcut in (
-                ("Wyświetl pomoc", self.wyswietl_pomoc, "Ctrl+H", "<Control-h>"),
-                ("Autor", self.wyswietl_autora, "Ctrl+O", "<Control-o>"),
-                ("Licencja", self.wyswietl_licencje, "Ctrl+O", "<Control-o>"),
+                ("Wyświetl pomoc", self.wyswietl_pomoc, "Ctrl+P", "<Control-p>"),
+                ("Autor", self.wyswietl_autora, "Ctrl+A", "<Control-a>"),
+                ("Licencja", self.wyswietl_licencje, "Ctrl+L", "<Control-l>"),
                 (None, None, None, None),
                 ("Quit", self.file_quit, "Ctrl+Q", "<Control-q>")):
             if label is None:
@@ -117,16 +117,21 @@ class MainFrame(tk.Frame):
         text_top.insert(tk.END, "Tutaj znajdziesz opis wszystkich funkcji programu")
         text_top.pack()
 
+        self.ustawStatusBar("Wyświetlono pomoc")
+
     def wyswietl_autora(self):
+        self.ustawStatusBar("Wyświetlono autora")
         tkinter.messagebox.showinfo("Autor", "Aplikację przygotował Dominik Tomaszewski")
 
     def wyswietl_licencje(self):
+        self.ustawStatusBar("Wyświetlono licencję")
         tkinter.messagebox.showinfo("Licencja", "Darmowa dla użytku edukacyjnego, 2022")
 
     def usun_wyniki(self):
         self.robocze.t.destroy()
         self.robocze.wynik_scrollbar.destroy()
         self.robocze.wynik_label.destroy()
+        self.ustawStatusBar("Wyczyszczono wyniki")
 
     def utworz_pasek_narzedzi(self):
         self.toolbar_images = []  # obrazki toolbara, muszą być pamiętane stale
@@ -162,7 +167,7 @@ class MainFrame(tk.Frame):
 
     def utworz_status(self):
         self.statusbar = tk.Label(self.parent, text="Linia statusu...", anchor=tkinter.W, background='#969696')
-        # self.statusbar.after(5000, self.clearStatusBar)
+        self.statusbar.after(5000, self.clearStatusBar)
         self.statusbar.grid(row=2, column=0, columnspan=2, sticky=tk.EW)
 
     def utworz_okno_robocze(self):
@@ -176,8 +181,8 @@ class MainFrame(tk.Frame):
         # self.robocze.grid(row=1, column=0, columnspan=1, rowspan=1, sticky=tk.NSEW)
 
     def file_quit(self, event=None):
-        # Świetny sposób na upewnienie się, czy ktoś chce zakończyć działanie programu
-        # potem można się upewniać o zapis pliku itd.
+        self.ustawStatusBar("Wyjście z programu")
+
         reply = tkinter.messagebox.askyesno(
             "Potwierdź wyjście",
             "Czy na pewno chcesz wyjść?", parent=self.parent)
@@ -192,6 +197,7 @@ class MainFrame(tk.Frame):
             self.parent.destroy()
 
     def load_config(self, event=None):
+        self.ustawStatusBar("Ladowanie pliku konfiguracyjnego")
         event = event
 
         filename = tk.filedialog.askopenfilename(initialdir=os.path.dirname(__file__),
@@ -203,38 +209,44 @@ class MainFrame(tk.Frame):
         except:
             tkinter.messagebox.showerror("Błąd", "Błąd wczytania pliku konfiguracyjnego")
             tkinter.messagebox.showinfo("Sukces", "Nie udało się wczytać pliku konfiguracyjnego, "
-                                                 "pozostano przy poprzedniej konfiguracji")
+                                                  "pozostano przy poprzedniej konfiguracji")
 
     def save_config(self, event=None):
-        save_con_path = tk.simpledialog.askstring("Utwórz konfigurację", prompt="Podaj nazwę nowej konfiguracji")
-        save_con_path = save_con_path + ".ini"
-        config_custom = configparser.ConfigParser()
-        config_custom['DEFAULT'] = {'size_x': 1000,
-                             'size_y': 800,
-                             'bazowa_geometria': self.parent.winfo_geometry(),
-                             'day_start': 1,
-                             'month_start': 1,
-                             'year_start': 2020,
-                             'day_end': 31,
-                             'month_end': 12,
-                             'year_end': 2020,
-                             'country': 'Poland',
-                             'continent': 'Europe',
-                             'data_select_type': 1,
-                             'cases_type': 1,
-                             'sort_type': 1,
-                             'reverse_sort_flag': False,
-                             'total_flag': False,
-                             'glowna_nazwa': "Coronavirus Program",
-                             'covid_path': "Covid.txt"}
+        self.ustawStatusBar("Zapisywanie pliku konfiguracyjnego")
 
-        config_custom.write(open(save_con_path, "w"))
+        try:
+            save_con_path = tk.simpledialog.askstring("Utwórz konfigurację", prompt="Podaj nazwę nowej konfiguracji")
+            save_con_path = save_con_path + ".ini"
+            config_custom = configparser.ConfigParser()
+            config_custom['DEFAULT'] = {'size_x': 1000,
+                                        'size_y': 800,
+                                        'bazowa_geometria': self.parent.winfo_geometry(),
+                                        'day_start': 1,
+                                        'month_start': 1,
+                                        'year_start': 2020,
+                                        'day_end': 31,
+                                        'month_end': 12,
+                                        'year_end': 2020,
+                                        'country': 'Poland',
+                                        'continent': 'Europe',
+                                        'data_select_type': 1,
+                                        'cases_type': 1,
+                                        'sort_type': 1,
+                                        'reverse_sort_flag': False,
+                                        'total_flag': False,
+                                        'glowna_nazwa': "Coronavirus Program",
+                                        'covid_path': "Covid.txt"}
 
-        tkinter.messagebox.showinfo("Sukces", "Pomyślnie zapisano konfigurację użytkownika")
+            config_custom.write(open(save_con_path, "w"))
+
+            tkinter.messagebox.showinfo("Sukces", "Pomyślnie zapisano konfigurację użytkownika")
+        except:
+            tkinter.messagebox.showerror("Błąd", "Wystąpił błąd przy zapisie konfiguracji użytkownika")
 
         event = event
 
     def open_covid(self, event=None):
+        self.ustawStatusBar("Otwieranie pliku covid")
         filename = tk.filedialog.askopenfilename(initialdir=os.path.dirname(__file__), title="Wybierz plik z covid",
                                                  filetypes=(("txt files", "*.txt"), ("all files", "*.*")))
         ProgramLogic.covid_path = filename
@@ -242,6 +254,7 @@ class MainFrame(tk.Frame):
         event = event
 
     def save_result(self, event=None):
+        self.ustawStatusBar("Zapisywanie wyników covid")
         reply = True
 
         print(os.path.exists("logs.txt"))
@@ -263,6 +276,7 @@ class MainFrame(tk.Frame):
 
     def ustawStatusBar(self, txt):
         self.statusbar["text"] = txt
+        self.statusbar.after(5000, self.clearStatusBar)
 
     def clearStatusBar(self):
         self.statusbar["text"] = ""
@@ -279,8 +293,8 @@ class WorkingWindow(tk.Frame):
 
         self.start_button = tk.Button(self, text="Start", padx=2, pady=2, background="#1f992f",
                                       command=self.funkcje_start_button)
-        self.start_button.grid(row=1, column=0, padx=5, pady=5,
-                               sticky=tk.NSEW)  # biała czcionka, mniej zielonego, całe miejsce
+        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.NSEW)
+        self.parent.bind('<Return>', self.funkcje_start_button)
 
         self.frame_ustawien.grid(row=0, column=0, sticky=tk.N + tk.S + tk.W + tk.E)
         self.frame_okno_wynikow.grid(row=0, column=1, rowspan=2, sticky=tk.NSEW)
@@ -345,6 +359,9 @@ class WorkingWindow(tk.Frame):
         self.country_entry.grid(column=1, row=4)
         self.continent_entry = tk.Entry(self.frame_pola, textvariable=self.contintent_text)
         self.continent_entry.grid(column=1, row=5)
+
+    def ustaw_status_bar(self, text):
+        ustawStatusBar()
 
     def utworz_ustawienia_check_boxy(self):  # command są nie potrzebne
         self.frame_boxy = tk.LabelFrame(self.frame_ustawien, text="Zaznaczyć w razie potrzeby", padx=2, pady=2)
@@ -463,7 +480,6 @@ class WorkingWindow(tk.Frame):
                 self.start_month_entry['state'] = tk.NORMAL
                 self.end_month_entry['state'] = tk.NORMAL
 
-
         # switch z opcjamy wygaszania dat
 
         showinfo(
@@ -476,7 +492,7 @@ class WorkingWindow(tk.Frame):
         print(self.cb1.get())
         print('drop:', self.combobox_value.get())
 
-    def funkcje_start_button(self):
+    def funkcje_start_button(self, event=None):
         # posprawdzaj czy dobrze powprowadzane
         if not self.sprawdz_poprawnosc():
             return
@@ -519,7 +535,7 @@ class WorkingWindow(tk.Frame):
         error_text = ""
 
         # czy data przed nie jest po dacie po
-        #obsługa wyjątku gdy nie wpisano inta
+        # obsługa wyjątku gdy nie wpisano inta
         try:
             first = int(self.start_month_text.get()) * 1000 + int(self.start_day_text.get())
             second = int(self.end_month_text.get()) * 1000 + int(self.end_day_text.get())
@@ -600,7 +616,6 @@ class WorkingWindow(tk.Frame):
 
         self.wynik_scrollbar = tk.Scrollbar(self.frame_wynikow)
 
-
         self.t = tk.Text(self.frame_wynikow, wrap=tk.NONE,
                          yscrollcommand=self.wynik_scrollbar.set)
 
@@ -620,9 +635,11 @@ class WorkingWindow(tk.Frame):
         else:
             for el in ProgramLogic.covid_list:
                 if ProgramLogic.cases_type == 1:
-                    text = "{:10d}".format(el[4]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
+                    text = "{:10d}".format(el[4]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(
+                        el[1]) + ".2020"
                 else:
-                    text = "{:10d}".format(el[5]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
+                    text = "{:10d}".format(el[5]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(
+                        el[1]) + ".2020"
                 self.t.insert(tk.END, text + "\n")
 
             self.wynik_scrollbar.config(command=self.t.yview)
@@ -659,6 +676,10 @@ def tworz_configfile():
             config.write(configfile)
     else:
         print("*.ini już istnieje")
+
+
+def ustawStatusBar(widget, txt):
+    widget.statusbar["text"] = txt
 
 
 if __name__ == '__main__':
