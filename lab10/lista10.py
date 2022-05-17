@@ -1,3 +1,4 @@
+import calendar
 import tkinter as tk
 from tkinter import ttk
 from tkinter.messagebox import showinfo
@@ -389,13 +390,13 @@ class WorkingWindow(tk.Frame):
         }
 
         self.combobox_value = tk.StringVar()
-        print(type(ProgramLogic.data_select_type))
         self.combobox_value.set(choose_name_dic[ProgramLogic.data_select_type])
 
         self.cb = ttk.Combobox(self.frame_combobox, textvariable=self.combobox_value)
 
         self.cb['values'] = ['wybór daty', 'wybór miesiąca', 'wybór daty początkowej i końcowej']
         self.cb['state'] = 'readonly'
+        self.cb.set('wybór daty początkowej i końcowej')
         self.cb.pack(fill=tk.BOTH)
 
         self.cb.bind('<<ComboboxSelected>>', self.funkcje_comboboxa)
@@ -442,6 +443,26 @@ class WorkingWindow(tk.Frame):
 
     def funkcje_comboboxa(self, event):
         print("COS")
+        print(self.combobox_value.get())
+
+        match self.combobox_value.get():
+            case 'wybór daty':
+                self.end_day_entry['state'] = tk.DISABLED
+                self.end_month_entry['state'] = tk.DISABLED
+                self.start_day_entry['state'] = tk.NORMAL
+                self.start_month_entry['state'] = tk.NORMAL
+                pass
+            case 'wybór miesiąca':
+                self.start_day_entry['state'] = tk.DISABLED
+                self.end_day_entry['state'] = tk.DISABLED
+                self.start_month_entry['state'] = tk.NORMAL
+                self.end_month_entry['state'] = tk.NORMAL
+            case 'wybór daty początkowej i końcowej':
+                self.start_day_entry['state'] = tk.NORMAL
+                self.end_day_entry['state'] = tk.NORMAL
+                self.start_month_entry['state'] = tk.NORMAL
+                self.end_month_entry['state'] = tk.NORMAL
+
 
         # switch z opcjamy wygaszania dat
 
@@ -457,9 +478,21 @@ class WorkingWindow(tk.Frame):
 
     def funkcje_start_button(self):
         # posprawdzaj czy dobrze powprowadzane
-
         if not self.sprawdz_poprawnosc():
             return
+
+        # zobacz jaki tryb wprowadzania danych
+        match self.combobox_value.get():
+            case 'wybór daty':
+                self.end_day_text.set(self.start_day_text.get())
+                self.end_month_text.set(self.start_month_text.get())
+            case 'wybór miesiąca':
+                self.start_day_text.set(1)
+                dzien = calendar.monthrange(2020, int(self.end_month_text.get()))
+                print(dzien)
+                self.end_day_text.set(dzien[1])
+            case 'wybór daty początkowej i końcowej':
+                pass
 
         print("Dodaje param")
         param_list = [
