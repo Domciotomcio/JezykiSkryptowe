@@ -2,7 +2,7 @@ import os
 from os.path import exists
 from datetime import datetime
 
-COVID_PATH = r"C:\Users\Dominik\PycharmProjects\JezykiSkryptowe\lab10\CovidShort.txt"
+COVID_PATH = r"C:\Users\Dominik\PycharmProjects\JezykiSkryptowe\lab10\Covid.txt"
 
 
 class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow

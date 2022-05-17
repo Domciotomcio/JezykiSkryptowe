@@ -6,6 +6,7 @@ import tkinter.messagebox
 import configparser
 import os
 import logging
+from datetime import datetime
 
 dane_konfig = "c:/Python/tc.txt"
 
@@ -143,7 +144,7 @@ class MainFrame(tk.Frame):
 
     def utworz_okno_robocze(self):
         self.robocze = WorkingWindow(self.parent)
-        self.robocze.grid(row=1, column=0, columnspan=1, rowspan=1, padx=3, pady=3, sticky=tk.NSEW)
+        self.robocze.grid(row=1, column=0, columnspan=1, rowspan=1, padx=10, pady=1, sticky=tk.NSEW)
 
         # self.robocze = tk.Frame(self.parent, background='#00704A')
 
@@ -190,18 +191,24 @@ class MainFrame(tk.Frame):
 
 class WorkingWindow(tk.Frame):
     def __init__(self, master=None):
-        tk.Frame.__init__(self, master, padx=10, pady=10)
+        tk.Frame.__init__(self, master, padx=10, pady=10, bg="#a9bbdb")
 
         self.parent = master
 
         self.utworz_okno_ustawien()
         self.utworz_okno_wynikow()
 
-        self.start_button = tk.Button(self, text="Start", padx=2, pady=2, background="#1f992f", command=self.funkcje_start_button)
-        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W+tk.E)  # biała czcionka, mniej zielonego, całe miejsce
+        self.start_button = tk.Button(self, text="Start", padx=2, pady=2, background="#1f992f",
+                                      command=self.funkcje_start_button)
+        self.start_button.grid(row=1, column=0, padx=5, pady=5,
+                               sticky=tk.NSEW)  # biała czcionka, mniej zielonego, całe miejsce
 
-        self.frame_ustawien.grid(row=0, column=0)
-        self.frame_wynikow.grid(row=0, column=1)
+        self.frame_ustawien.grid(row=0, column=0, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.frame_okno_wynikow.grid(row=0, column=1, rowspan=2, sticky=tk.NSEW)
+
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=999)
+        self.rowconfigure(0, weight=999)
 
     def utworz_okno_ustawien(self):
         self.frame_ustawien = tk.LabelFrame(self, text="Ustawienia", pady=10, padx=10)
@@ -211,13 +218,10 @@ class WorkingWindow(tk.Frame):
         self.utworz_ustawienia_radio_buttony()
         self.utworz_ustawienia_combobox()
 
-        self.frame_pola.grid(row=1, column=0, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
-        self.frame_boxy.grid(row=0, column=1, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
-        self.frame_radio.grid(row=1, column=1, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
-        self.frame_combobox.grid(row=0, column=0, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
-
-
-
+        self.frame_pola.grid(row=1, column=0, padx=2, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.frame_boxy.grid(row=0, column=1, padx=2, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.frame_radio.grid(row=1, column=1, padx=2, sticky=tk.N + tk.S + tk.W + tk.E)
+        self.frame_combobox.grid(row=0, column=0, padx=2, sticky=tk.N + tk.S + tk.W + tk.E)
 
     def utworz_ustawienia_pola(self):
         self.frame_pola = tk.LabelFrame(self.frame_ustawien, text="Ustaw poszczególne parametry", padx=5, pady=5)
@@ -270,7 +274,8 @@ class WorkingWindow(tk.Frame):
         self.cb2 = tk.IntVar()
         # self.checkbox1 = tk.Checkbutton(self.frame_boxy, variable=self.cb1, text="Czy sortować po dacie?", onvalue=1, offvalue=0, command=self.funkcje_boxa)
         # self.checkbox1.grid(column=0, row=0)
-        self.checkbox2 = tk.Checkbutton(self.frame_boxy, variable=self.cb2, text="Sortowanie odwrotne", onvalue=1, offvalue=0, command=self.funkcje_boxa)
+        self.checkbox2 = tk.Checkbutton(self.frame_boxy, variable=self.cb2, text="Sortowanie odwrotne", onvalue=1,
+                                        offvalue=0, command=self.funkcje_boxa)
         self.checkbox2.grid(column=0, row=1)
 
     def utworz_ustawienia_radio_buttony(self):
@@ -316,20 +321,52 @@ class WorkingWindow(tk.Frame):
         self.cb.bind('<<ComboboxSelected>>', self.funkcje_comboboxa)
 
     def utworz_okno_wynikow(self):
-        self.frame_wynikow = tk.LabelFrame(self, text="Wyniki", padx=2, pady=2)
-        self.l1 = tk.Label(self.frame_wynikow, text="TEAXT").pack()
+        self.frame_okno_wynikow = tk.LabelFrame(self, text="Wyniki", padx=2, pady=2)
+        self.frame_ustawien_wynikow = tk.LabelFrame(self.frame_okno_wynikow, text="Wyniki przy poniższych ustawieniach",
+                                                    padx=2, pady=2)
+        self.frame_ustawien_wynikow.pack(fill=tk.X)
 
+        self.frame_wynikow = tk.LabelFrame(self.frame_okno_wynikow, text="Właściwe wyniki", padx=2, pady=2)
+        self.frame_wynikow.pack(fill=tk.X)
 
+        self.act_time = tk.StringVar()
+        self.act_time.set("czas")
+        self.set_res_label1 = tk.Label(self.frame_ustawien_wynikow, textvariable=self.act_time).pack(anchor=tk.W)
 
+        self.start_dat_res = tk.StringVar()
+        self.start_dat_res.set("data początkowa")
+        self.set_res_label2 = tk.Label(self.frame_ustawien_wynikow, textvariable=self.start_dat_res).pack(anchor=tk.W)
+
+        self.end_dat_res = tk.StringVar()
+        self.end_dat_res.set("data końcowa")
+        self.set_res_label3 = tk.Label(self.frame_ustawien_wynikow, textvariable=self.end_dat_res).pack(anchor=tk.W)
+
+        self.country_continent_res = tk.StringVar()
+        self.country_continent_res.set("kraj,  kontynent")
+        self.set_res_label4 = tk.Label(self.frame_ustawien_wynikow,
+                                       textvariable=self.country_continent_res).pack(anchor=tk.W)
+
+        self.act_set_var = tk.StringVar()
+        self.act_set_var.set("Ustawienia")
+        self.set_res_label5 = tk.Label(self.frame_ustawien_wynikow,
+                                       textvariable=self.act_set_var).pack(anchor=tk.W)
+
+        self.label_wynikow_data = tk.Label(self.frame_wynikow, text="liczba przypadków, data")
+        self.label_wynikow_data.pack(side=tk.TOP, anchor=tk.W)
+
+        self.t = tk.Text(self.frame_wynikow)
+        self.wynik_scrollbar = tk.Scrollbar(self.frame_wynikow)
+
+        # if jeśli sortowania odwrocone, wszystkie wyniki itp zeby wyswietlic
 
     def funkcje_comboboxa(self, event):
         print("COS")
 
-        #switch z opcjamy wygaszania dat
+        # switch z opcjamy wygaszania dat
 
         showinfo(
-           title='Result',
-           message=f'Wybierasz wybór daty przez {self.combobox_value.get()}!'
+            title='Result',
+            message=f'Wybierasz wybór daty przez {self.combobox_value.get()}!'
         )
 
     def funkcje_boxa(self):
@@ -352,10 +389,64 @@ class WorkingWindow(tk.Frame):
         ProgramLogic.set_param(param_list)
         ProgramLogic.default_steps()
 
+        self.odswiez_okno_wynikow()
         print("Klinieto Start button")
 
     def odswiez_okno_wynikow(self):
-        print('cos')
+        # usun poprzednie okno
+        self.t.destroy()
+        self.wynik_scrollbar.destroy()
+
+        # zakutalizuj ustawienia
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        self.act_time.set("czas wykonania: " + current_time)
+        self.start_dat_res.set("Data początkowa: "
+                               + self.start_day_text.get() + '.' + self.start_month_text.get() + '.2020')
+        self.end_dat_res.set("Data końcowa: "
+                             + self.end_day_text.get() + '.' + self.end_month_text.get() + '.2020')
+        self.country_continent_res.set(
+            "Kraj: " + self.country_text.get() + ", Kontynent: " + self.contintent_text.get())
+        # self.country_continent_res.set("Kontynent: " + self.contintent_text.get())
+
+        act_set = "Zastowano ustawienia: "
+
+        if ProgramLogic.cases_type == 1:
+            act_set += "Przypadki zachorowań, "
+        else:
+            act_set += "Przypadki śmierci, "
+
+        if ProgramLogic.sort_type == 1:
+            act_set += "Sortowanie po datach"
+        else:
+            act_set += "Sortowanie po przypadkach"
+
+        if ProgramLogic.reverse_sort_flag:
+            act_set += ", Sortowanie odwrotne"
+
+        self.act_set_var.set(act_set)
+
+        self.wynik_scrollbar = tk.Scrollbar(self.frame_wynikow)
+        self.wynik_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.t = tk.Text(self.frame_wynikow, wrap=tk.NONE,
+                    yscrollcommand=self.wynik_scrollbar.set)
+
+        self.t.pack(fill=tk.BOTH)
+
+        for el in ProgramLogic.covid_list:
+            if ProgramLogic.cases_type == 1:
+                text = "{:10d}".format(el[4]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
+            else:
+                text = "{:10d}".format(el[5]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
+            self.t.insert(tk.END, text + "\n")
+
+
+
+        self.wynik_scrollbar.config(command=self.t.yview)
+
+        self.t['state'] = tk.DISABLED
+
 
 def logger():
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
