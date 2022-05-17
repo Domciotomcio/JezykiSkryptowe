@@ -2,14 +2,17 @@ import os
 from os.path import exists
 from datetime import datetime
 
-COVID_PATH = r"C:\Users\Dominik\PycharmProjects\JezykiSkryptowe\lab9\Covid.txt"
+COVID_PATH = r"C:\Users\Dominik\PycharmProjects\JezykiSkryptowe\lab10\CovidShort.txt"
 
 
 class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
-    def __init__(self, conditions_tuple):
-        self.conditions_tuple = conditions_tuple
+    conditions_tuple = []
 
-    def read_from_file_covid(self, path):
+    def __init__(self, conditions_tuple):
+        FileOperation.conditions_tuple = conditions_tuple
+
+    @classmethod
+    def read_from_file_covid(cls, path):
         covid_list = []
 
         if not os.path.exists(path):
@@ -25,31 +28,34 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
                     act_tuple = (int(line_list[1]), int(line_list[2]), line_list[6],
                                  line_list[10], int(line_list[4]), int(line_list[5]))
 
-                    a = self.tuple_meets_conditions(act_tuple)
+                    a = FileOperation.tuple_meets_conditions(act_tuple)
 
-                    if self.tuple_meets_conditions(act_tuple):
+                    if FileOperation.tuple_meets_conditions(act_tuple):
                         covid_list.append(act_tuple)
 
         return covid_list
 
-    def tuple_meets_conditions(self, checked_tuple):
+    @classmethod
+    def tuple_meets_conditions(cls, checked_tuple):
         meets_conditions = True
 
-        start_day = self.conditions_tuple[0] + self.conditions_tuple[1] * 100
-        end_day = self.conditions_tuple[2] + self.conditions_tuple[3] * 100
+        start_day = FileOperation.conditions_tuple[0] + FileOperation.conditions_tuple[1] * 100
+        end_day = FileOperation.conditions_tuple[2] + FileOperation.conditions_tuple[3] * 100
 
         checked_day = checked_tuple[0] + checked_tuple[1] * 100
 
         meets_conditions = (start_day <= checked_day <= end_day) and \
-                           checked_tuple[2] == self.conditions_tuple[4] and \
-                           checked_tuple[3] == self.conditions_tuple[5]
+                           checked_tuple[2] == FileOperation.conditions_tuple[4] and \
+                           checked_tuple[3] == FileOperation.conditions_tuple[5]
 
         return meets_conditions
 
-    def set_conditions_tuple(self, new_con_tup):
-        self.conditions_tuple = new_con_tup
+    @classmethod
+    def set_conditions_tuple(cls, new_con_tup):
+        FileOperation.conditions_tuple = new_con_tup
 
-    def write_log_file(self, name, path, covid_list, sum_flag, cases_flag):
+    @classmethod
+    def write_log_file(cls, name, path, covid_list, sum_flag):
         print("zapisano logi w pliku")
 
         if os.path.exists(path):
@@ -57,10 +63,7 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
 
         f = open("logi.txt", "w")
 
-        if cases_flag:
-            index = 4
-        else:
-            index = 5
+        index = 4  # index czy przypadki czy zgony
 
         f.write("Logi z Covid\n")
         f.write("------------------\n")
@@ -70,9 +73,9 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
         current_time = now.strftime("%H:%M:%S")
         f.write("Czas = " + str(current_time))
         f.write("\nkryteria:\n")
-        f.write("data poczatkowa: {0}.{1}\n".format(self.conditions_tuple[0], self.conditions_tuple[1]))
-        f.write("data koncowa: {0}.{1}\n".format(self.conditions_tuple[2], self.conditions_tuple[3]))
-        f.write("kraj: {0}, kontynent: {1}\n".format(self.conditions_tuple[4], self.conditions_tuple[5]))
+        f.write("data poczatkowa: {0}.{1}\n".format(FileOperation.conditions_tuple[0], FileOperation.conditions_tuple[1]))
+        f.write("data koncowa: {0}.{1}\n".format(FileOperation.conditions_tuple[2], FileOperation.conditions_tuple[3]))
+        f.write("kraj: {0}, kontynent: {1}\n".format(FileOperation.conditions_tuple[4], FileOperation.conditions_tuple[5]))
         f.write("Data  Liczba Przypadkow")
         f.write("\n------------------\n")
 
@@ -89,62 +92,76 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
 
 
 class ProgramLogic:
+    day_start = -1
+    day_end = -1
+    month_start = -1
+    month_end = -1
+    country = ""
+    continent = ""
+    data_select_type = 1
+    cases_type = 1
+    sort_type = 1
+    reverse_sort_flag = False
+    total_flag = False
+    covid_list = []
+
     def __init__(self):
-        self.day_start = -1
-        self.day_end = -1
-        self.month_start = -1
-        self.month_end = -1
-        self.country = ""
-        self.continent = ""
-        self.show_flag = False
-        self.set_flag = False
-        self.cases_flag = False
-        self.deaths_flag = False
-        self.total_flag = False
-        self.covid_list = []
+        ProgramLogic.set_default_param()
 
-        self.file_operation = FileOperation([])
+    @classmethod
+    def set_default_param(cls):
+        ProgramLogic.day_start = 1
+        ProgramLogic.day_end = 30
+        ProgramLogic.month_start = 1
+        ProgramLogic.month_end = 12
+        ProgramLogic.country = "Poland"
+        ProgramLogic.continent = "Europe"
+        ProgramLogic.data_select_type = 1
+        ProgramLogic.cases_type = 1
+        ProgramLogic.sort_type = 1
+        ProgramLogic.reverse_sort_flag = False
+        ProgramLogic.total_flag = False
 
-        self.set_default_param()
+        ProgramLogic.set_conditions_tuple()
 
-    def set_default_param(self):
-        self.day_start = 1
-        self.day_end = 30
-        self.month_start = 1
-        self.month_end = 12
-        self.country = "Poland"
-        self.continent = "Europe"
-        self.show_flag = False
-        self.set_flag = False
-        self.cases_flag = False
-        self.deaths_flag = False
-        self.total_flag = False
+    @classmethod
+    def create_result(cls):
+        ProgramLogic.covid_list = FileOperation.read_from_file_covid(COVID_PATH)
 
-        self.file_operation.set_conditions_tuple(
-            [self.day_start, self.month_start, self.day_end, self.month_end, self.country, self.continent])
-
-    def create_result(self):
-        self.covid_list = self.file_operation.read_from_file_covid(COVID_PATH)
-
-    def prepare_result(self):
+    @classmethod
+    def prepare_result(cls):
         # jakies sortowanie
-        self.file_operation.write_log_file("logs.txt", "logs.txt", self.covid_list, self.total_flag, self.cases_flag)
+        FileOperation.write_log_file("logs.txt", "logs.txt", ProgramLogic.covid_list, ProgramLogic.total_flag)
 
-    def default_operations(self):
-        self.create_result()
-        self.prepare_result()
+    @classmethod
+    def default_steps(cls):
+        ProgramLogic.create_result()
+        ProgramLogic.prepare_result()
 
-    def set_param(self, params):
-        self.day_start = params[0]
-        self.day_end = params[1]
-        self.month_start = params[2]
-        self.month_end = params[3]
-        self.country = params[4]
-        self.continent = params[5]
+    @classmethod
+    def set_param(cls, params):
+        ProgramLogic.day_start = params[0]
+        ProgramLogic.day_end = params[1]
+        ProgramLogic.month_start = params[2]
+        ProgramLogic.month_end = params[3]
+        ProgramLogic.country = params[4]
+        ProgramLogic.continent = params[5]
 
-        self.set_conditions_tuple()
+        ProgramLogic.set_conditions_tuple()
 
-    def set_conditions_tuple(self):
-        self.file_operation.set_conditions_tuple(
-            [self.day_start, self.month_start, self.day_end, self.month_end, self.country, self.continent])
+    @classmethod
+    def set_conditions_tuple(cls):
+        FileOperation.set_conditions_tuple([
+            ProgramLogic.day_start,
+            ProgramLogic.month_start,
+            ProgramLogic.day_end,
+            ProgramLogic.month_end,
+            ProgramLogic.country,
+            ProgramLogic.continent
+        ])
 
+
+if __name__ == "__main__":
+    p1 = ProgramLogic()
+    ProgramLogic.set_param([1, 30, 11, 11, 'Afghanistan', 'Asia'])
+    ProgramLogic.default_steps()

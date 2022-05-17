@@ -52,8 +52,19 @@ class MainFrame(tk.Frame):
         self.geometria_baza = domyslne['bazowa_geometria']
         self.parent.geometry(self.geometria_baza)  # geometria
         self.parent.title(domyslne['glowna_nazwa'])
-        # potem może dodaj lepszą ścieżkę
         self.parent.iconbitmap("images/virus.ico")
+
+        # zczytanie parametrów do obiektu logic
+        param_list = [
+            domyslne['day_start'],
+            domyslne['day_end'],
+            domyslne['month_start'],
+            domyslne['month_end'],
+            domyslne['country'],
+            domyslne['continent'],
+        ]
+
+        self.logic.set_param(param_list)
 
     def utworz_bazowe_menu(self):
         self.menubar = tk.Menu(self.parent)  # stwórz widget menubar klasy Menu
@@ -94,7 +105,7 @@ class MainFrame(tk.Frame):
 
     def utworz_pasek_narzedzi(self):
         self.toolbar_images = []  # obrazki toolbara, muszą być pamiętane stale
-        self.toolbar = tk.Frame(self.parent, background='#2f47fa')  # tworzymy ramkę toolbar, do trzymania tam narzędzi
+        self.toolbar = tk.Frame(self.parent, background='#969696')  # tworzymy ramkę toolbar, do trzymania tam narzędzi
 
         # ta pętla przedzie po podanej liście ikonek z ich funkcjami i wykona dla nich wszystkie określone niżej zadania
         # lista z warunku pętli pozwala łatwo dodawać ikonki (ich ścieżkę) wraz z funkcją którą będą wywoływać
@@ -126,7 +137,7 @@ class MainFrame(tk.Frame):
         self.toolbar.grid(row=0, column=0, columnspan=2, sticky=tk.NSEW)
 
     def utworz_status(self):
-        self.statusbar = tk.Label(self.parent, text="Linia statusu...", anchor=tkinter.W)
+        self.statusbar = tk.Label(self.parent, text="Linia statusu...", anchor=tkinter.W, background='#969696')
         # self.statusbar.after(5000, self.clearStatusBar)
         self.statusbar.grid(row=2, column=0, columnspan=2, sticky=tk.EW)
 
@@ -179,122 +190,134 @@ class MainFrame(tk.Frame):
 
 class WorkingWindow(tk.Frame):
     def __init__(self, master=None):
-        tk.Frame.__init__(self, master, padx=10, pady=10, background='#529ff7')
+        tk.Frame.__init__(self, master, padx=10, pady=10)
 
         self.parent = master
 
         self.utworz_okno_ustawien()
         self.utworz_okno_wynikow()
 
+        self.start_button = tk.Button(self, text="Start", padx=2, pady=2, background="#1f992f", command=self.funkcje_start_button)
+        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W+tk.E)  # biała czcionka, mniej zielonego, całe miejsce
+
+        self.frame_ustawien.grid(row=0, column=0)
+        self.frame_wynikow.grid(row=0, column=1)
+
     def utworz_okno_ustawien(self):
-        self.frame_ustawien = tk.LabelFrame(self, text="Ustawienia", padx=2, pady=2, background='#ffffff')
+        self.frame_ustawien = tk.LabelFrame(self, text="Ustawienia", pady=10, padx=10)
 
         self.utworz_ustawienia_pola()
         self.utworz_ustawienia_check_boxy()
         self.utworz_ustawienia_radio_buttony()
         self.utworz_ustawienia_combobox()
-        self.start_button = tk.Button(self.frame_ustawien, text="Start", padx=2, pady=2, background="green")
 
-        self.frame_pola.grid(row=0, column=0, rowspan=2)
-        self.frame_boxy.grid(row=0, column=1)
-        self.frame_radio.grid(row=1, column=1)
-        self.frame_combobox.grid(row=2, column=0, columnspan=1)
-        self.start_button.grid(row=2, column=1)  # biała czcionka, mniej zielonego, całe miejsce
+        self.frame_pola.grid(row=1, column=0, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
+        self.frame_boxy.grid(row=0, column=1, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
+        self.frame_radio.grid(row=1, column=1, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
+        self.frame_combobox.grid(row=0, column=0, padx=2, sticky=tk.N+tk.S+tk.W+tk.E)
 
-        self.frame_ustawien.grid(row=0, column=0)
+
+
 
     def utworz_ustawienia_pola(self):
-        self.frame_pola = tk.LabelFrame(self.frame_ustawien, text="Ustawienia pola", padx=2, pady=2,
-                                        background='#ffffff')
+        self.frame_pola = tk.LabelFrame(self.frame_ustawien, text="Ustaw poszczególne parametry", padx=5, pady=5)
 
-        self.label1 = tk.Label(self.frame_pola, text="selekcja zakresu dat")
-        self.label1.grid(column=0, row=0)
         self.label2 = tk.Label(self.frame_pola, text="Początkowy dzień")
-        self.label2.grid(column=0, row=1)
+        self.label2.grid(column=0, row=0)
         self.label3 = tk.Label(self.frame_pola, text="Ostatni dzień")
-        self.label3.grid(column=0, row=2)
+        self.label3.grid(column=0, row=1)
         self.label4 = tk.Label(self.frame_pola, text="Początkowy miesiąc")
-        self.label4.grid(column=0, row=3)
+        self.label4.grid(column=0, row=2)
         self.label5 = tk.Label(self.frame_pola, text="Ostatni miesiąc")
-        self.label5.grid(column=0, row=4)
+        self.label5.grid(column=0, row=3)
         self.label6 = tk.Label(self.frame_pola, text="Podaj kraj")
-        self.label6.grid(column=0, row=5)
+        self.label6.grid(column=0, row=4)
         self.label7 = tk.Label(self.frame_pola, text="Podaj kontynent")
-        self.label7.grid(column=0, row=6)
+        self.label7.grid(column=0, row=5)
 
         # ustawianie entry_text
-        self.entry_text1 = tk.StringVar()
-        self.entry_text1.set("tekst1")
-        self.entry_text2 = tk.StringVar()
-        self.entry_text2.set("tekst2")
-        self.entry_text3 = tk.StringVar()
-        self.entry_text3.set("tekst3")
-        self.entry_text4 = tk.StringVar()
-        self.entry_text4.set("tekst4")
-        self.entry_text5 = tk.StringVar()
-        self.entry_text5.set("tekst5")
-        self.entry_text6 = tk.StringVar()
-        self.entry_text6.set("tekst6")
+        self.start_day_text = tk.StringVar()
+        self.start_day_text.set(ProgramLogic.day_start)
+        self.end_day_text = tk.StringVar()
+        self.end_day_text.set(ProgramLogic.day_end)
+        self.start_month_text = tk.StringVar()
+        self.start_month_text.set(ProgramLogic.month_start)
+        self.end_month_text = tk.StringVar()
+        self.end_month_text.set(ProgramLogic.month_end)
+        self.country_text = tk.StringVar()
+        self.country_text.set(ProgramLogic.country)
+        self.contintent_text = tk.StringVar()
+        self.contintent_text.set(ProgramLogic.continent)
 
         # ustawianie pol do wprowadzania
-        self.start_day_entry = tk.Entry(self.frame_pola, textvariable=self.entry_text1)
+        self.start_day_entry = tk.Entry(self.frame_pola, textvariable=self.start_day_text)
         self.start_day_entry.grid(column=1, row=0)
-        self.end_day_entry = tk.Entry(self.frame_pola, textvariable=self.entry_text2)
+        self.end_day_entry = tk.Entry(self.frame_pola, textvariable=self.end_day_text)
         self.end_day_entry.grid(column=1, row=1)
-        self.start_month_entry = tk.Entry(self.frame_pola, textvariable=self.entry_text3)
+        self.start_month_entry = tk.Entry(self.frame_pola, textvariable=self.start_month_text)
         self.start_month_entry.grid(column=1, row=2)
-        self.end_month_entry = tk.Entry(self.frame_pola, textvariable=self.entry_text4)
+        self.end_month_entry = tk.Entry(self.frame_pola, textvariable=self.end_month_text)
         self.end_month_entry.grid(column=1, row=3)
-        self.country_entry = tk.Entry(self.frame_pola, textvariable=self.entry_text5)
+        self.country_entry = tk.Entry(self.frame_pola, textvariable=self.country_text)
         self.country_entry.grid(column=1, row=4)
-        self.continent_entry = tk.Entry(self.frame_pola, textvariable=self.entry_text6)
+        self.continent_entry = tk.Entry(self.frame_pola, textvariable=self.contintent_text)
         self.continent_entry.grid(column=1, row=5)
 
     def utworz_ustawienia_check_boxy(self):  # command są nie potrzebne
-        self.frame_boxy = tk.LabelFrame(self.frame_ustawien, text="Ustawienia boxow", padx=2, pady=2,
-                                        background='#ffffff')
+        self.frame_boxy = tk.LabelFrame(self.frame_ustawien, text="Zaznaczyć w razie potrzeby", padx=2, pady=2)
 
         self.cb1 = tk.IntVar()
         self.cb2 = tk.IntVar()
-        self.checkbox1 = tk.Checkbutton(self.frame_boxy, variable=self.cb1, text="Czy sortować po dacie?", onvalue=1, offvalue=0, command=self.funkcje_boxa)
-        self.checkbox1.grid(column=0, row=0)
+        # self.checkbox1 = tk.Checkbutton(self.frame_boxy, variable=self.cb1, text="Czy sortować po dacie?", onvalue=1, offvalue=0, command=self.funkcje_boxa)
+        # self.checkbox1.grid(column=0, row=0)
         self.checkbox2 = tk.Checkbutton(self.frame_boxy, variable=self.cb2, text="Sortowanie odwrotne", onvalue=1, offvalue=0, command=self.funkcje_boxa)
         self.checkbox2.grid(column=0, row=1)
 
-        self.var_cases_deaths = tk.IntVar()
-        self.checkbox3 = tk.Checkbutton(self.frame_boxy, variable=self.var_cases_deaths, text="Wybierz zachorowania", onvalue=1, offvalue=0, command=self.funkcje_boxa)
-        self.checkbox3.grid(column=0, row=2)
-
     def utworz_ustawienia_radio_buttony(self):
-        self.frame_radio = tk.LabelFrame(self.frame_ustawien, text="Ustawienia radio buttonow", padx=2, pady=2, background='#ffffff')
+        self.frame_radio = tk.LabelFrame(self.frame_ustawien, text="Wybierz opcję", padx=2, pady=2)
 
         # pozwoli wybrać 1. zachorowania 2. śmierci
-        self.zmienna_radiowa = tk.IntVar()
-        self.zmienna_radiowa.set(1)
-        self.radio_button1 = tk.Radiobutton(self.frame_radio, text='Zachorowania', variable=self.zmienna_radiowa,
+        self.radio_sort_label = tk.Label(self.frame_radio, text="Wybór przypadków").pack()
+        self.radio_cases_var = tk.IntVar()
+        self.radio_cases_var.set(1)
+        self.radio_button1 = tk.Radiobutton(self.frame_radio, text='Zachorowań', variable=self.radio_cases_var,
                                             value=1).pack()
-        self.radio_button2 = tk.Radiobutton(self.frame_radio, text='Śmierci', variable=self.zmienna_radiowa,
+        self.radio_button2 = tk.Radiobutton(self.frame_radio, text='Śmierci', variable=self.radio_cases_var,
+                                            value=2).pack()
+
+        # pozwoli wybrać sortowanie 1. po przypadkach, 2. po dacie
+        self.radio_sort_label = tk.Label(self.frame_radio, text="Wybór sortowania").pack()
+
+        self.radio_sort_var = tk.IntVar()
+        self.radio_sort_var.set(1)
+        self.radio_button3 = tk.Radiobutton(self.frame_radio, text='Po Dacie', variable=self.radio_sort_var,
+                                            value=1).pack()
+        self.radio_button4 = tk.Radiobutton(self.frame_radio, text='Po Przypadkach', variable=self.radio_sort_var,
                                             value=2).pack()
 
     def utworz_ustawienia_combobox(self):
-        self.frame_combobox = tk.LabelFrame(self.frame_ustawien, text="Ustawienia comboxow", padx=2, pady=2, background='#ffffff')
+        self.frame_combobox = tk.LabelFrame(self.frame_ustawien, text="Wybierz tryb wprowadzania daty", padx=2, pady=2)
+
+        choose_name_dic = {
+            1: 'wybór daty',
+            2: 'wybór miesiąca',
+            3: 'wybór daty początkowej i końcowej'
+        }
 
         self.combobox_value = tk.StringVar()
-        self.combobox_value.set("wybór daty")
+        self.combobox_value.set(choose_name_dic[ProgramLogic.data_select_type])
 
         self.cb = ttk.Combobox(self.frame_combobox, textvariable=self.combobox_value)
 
         self.cb['values'] = ['wybór daty', 'wybór miesiąca', 'wybór daty początkowej i końcowej']
         self.cb['state'] = 'readonly'
-        self.cb.pack()
+        self.cb.pack(fill=tk.BOTH)
 
         self.cb.bind('<<ComboboxSelected>>', self.funkcje_comboboxa)
 
     def utworz_okno_wynikow(self):
-        self.frame_wynikow = tk.LabelFrame(self, text="Wyniki", padx=2, pady=2, background='#ffffff')
+        self.frame_wynikow = tk.LabelFrame(self, text="Wyniki", padx=2, pady=2)
         self.l1 = tk.Label(self.frame_wynikow, text="TEAXT").pack()
-
-        self.frame_wynikow.grid(row=0, column=1)
 
 
 
@@ -314,20 +337,50 @@ class WorkingWindow(tk.Frame):
         print(self.cb1.get())
         print('drop:', self.combobox_value.get())
 
+    def funkcje_start_button(self):
+        # posprawdzaj czy dobrze powprowadzane
+
+        param_list = [
+            int(self.start_day_text.get()),
+            int(self.end_day_text.get()),
+            int(self.start_month_text.get()),
+            int(self.end_month_text.get()),
+            self.country_text.get(),
+            self.contintent_text.get(),
+        ]
+
+        ProgramLogic.set_param(param_list)
+        ProgramLogic.default_steps()
+
+        print("Klinieto Start button")
+
+    def odswiez_okno_wynikow(self):
+        print('cos')
 
 def logger():
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def tworz_configfile():
-    print(os.path.isfile(CONFIG_FILE))
-
     if not os.path.isfile(CONFIG_FILE):
-        print("tworzę plik ini")
+        print("Nie znaleziono pliku konfiguracyjnego, tworzę plik ini")
         config = configparser.ConfigParser()
         config['DEFAULT'] = {'size_x': 1000,
                              'size_y': 800,
                              'bazowa_geometria': '1000x800+50+50',
+                             'day_start': 1,
+                             'month_start': 1,
+                             'year_start': 2020,
+                             'day_end': 31,
+                             'month_end': 12,
+                             'year_end': 2020,
+                             'country': 'Poland',
+                             'continent': 'Europe',
+                             'data_select_type': 1,
+                             'cases_type': 1,
+                             'sort_type': 1,
+                             'reverse_sort_flag': False,
+                             'total_flag': False,
                              'glowna_nazwa': "Coronavirus Program"}
         with open(CONFIG_FILE, 'w') as configfile:
             config.write(configfile)
@@ -341,5 +394,4 @@ if __name__ == '__main__':
 
     root = tk.Tk()
     app = MainFrame(master=root)
-    # app = WorkingWindow(master=root)
     app.mainloop()
