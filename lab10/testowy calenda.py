@@ -1,6 +1,6 @@
 from tkinter import *
 from tkcalendar import *
-from datetime import date, timedelta
+import os
 
 root = Tk()
 root.title('Tytuł')

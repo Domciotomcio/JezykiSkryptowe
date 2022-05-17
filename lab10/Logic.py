@@ -2,8 +2,6 @@ import os
 from os.path import exists
 from datetime import datetime
 
-COVID_PATH = r"C:\Users\Dominik\PycharmProjects\JezykiSkryptowe\lab10\Covid.txt"
-
 
 class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
     conditions_tuple = []
@@ -38,6 +36,9 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
                     if FileOperation.tuple_meets_conditions(act_tuple):
                         covid_list.append(act_tuple)
 
+                #else:
+                    #print("Coś jest nie tak z plikiem")
+
         FileOperation.countries_continents = set(FileOperation.countries_continents)
         return covid_list
 
@@ -67,7 +68,7 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
         if os.path.exists(path):
             print("znaleziono juz plik o podanej sciezce, zostanie on nadpisany")
 
-        f = open("logi.txt", "w")
+        f = open("logs.txt", "w")
 
         index = 4  # index czy przypadki czy zgony
 
@@ -82,6 +83,7 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
         f.write("data poczatkowa: {0}.{1}\n".format(FileOperation.conditions_tuple[0], FileOperation.conditions_tuple[1]))
         f.write("data koncowa: {0}.{1}\n".format(FileOperation.conditions_tuple[2], FileOperation.conditions_tuple[3]))
         f.write("kraj: {0}, kontynent: {1}\n".format(FileOperation.conditions_tuple[4], FileOperation.conditions_tuple[5]))
+        f.write("\n------------------\n")
         f.write("Data  Liczba Przypadkow")
         f.write("\n------------------\n")
 
@@ -92,15 +94,16 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
             f.write("Suma przypadkow: " + str(sum))
         else:
             for el in covid_list:
-                f.write("{day}.{month}, {number}\n".format(day=el[0], month=el[1], number=el[index]))
+                f.write("{day}.{month}.2020, {number}\n".format(day=el[0], month=el[1], number=el[index]))
         f.write("\n------------------")
         f.close()
 
     @classmethod
     def load_countries_and_continents(cls, path):
+        print(ProgramLogic.covid_path)
         if not os.path.exists(path):
-            print("nie znaleziono pliku o podanej ścieżce")
-            return
+            print("nie znaleziono pliku covid o podanej ścieżce")
+            return False
 
         FileOperation.countries_continents = []
 
@@ -114,9 +117,15 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
                                  line_list[10], int(line_list[4]), int(line_list[5]), line_list[0])
 
                     FileOperation.countries_continents.append((line_list[6], line_list[10]))
+                #else:
+                    #print("Coś jest nie tam z plikiem 2")
+                    # return False
 
         FileOperation.countries_continents = set(FileOperation.countries_continents)
         print(FileOperation.countries_continents)
+
+        return True
+
 
 
 class ProgramLogic:
@@ -131,6 +140,7 @@ class ProgramLogic:
     sort_type = 1
     reverse_sort_flag = False
     total_flag = False
+    covid_path = ""
     covid_list = []
 
     def __init__(self):
@@ -149,12 +159,13 @@ class ProgramLogic:
         ProgramLogic.sort_type = 1
         ProgramLogic.reverse_sort_flag = False
         ProgramLogic.total_flag = False
+        ProgramLogic.covid_path = "Covid.txt"
 
         ProgramLogic.set_conditions_tuple()
 
     @classmethod
     def create_result(cls):
-        ProgramLogic.covid_list = FileOperation.read_from_file_covid(COVID_PATH)
+        ProgramLogic.covid_list = FileOperation.read_from_file_covid(ProgramLogic.covid_path)
 
     @classmethod
     def prepare_result(cls):
@@ -164,7 +175,7 @@ class ProgramLogic:
     @classmethod
     def default_steps(cls):
         ProgramLogic.create_result()
-        ProgramLogic.prepare_result()
+        # ProgramLogic.prepare_result()
         ProgramLogic.sort_list()
 
     @classmethod
@@ -197,6 +208,10 @@ class ProgramLogic:
         ])
 
     @classmethod
+    def set_covid_path(cls):
+        pass
+
+    @classmethod
     def sort_list(cls):
         if ProgramLogic.sort_type == 1:
             ProgramLogic.covid_list.sort(key=lambda date: datetime.strptime(date[6], "%d.%m.%Y"),
@@ -209,14 +224,18 @@ class ProgramLogic:
 
     @classmethod
     def check_country_and_continent(cls, country, continent):
-        FileOperation.load_countries_and_continents(COVID_PATH)
+        val = FileOperation.load_countries_and_continents(ProgramLogic.covid_path)
+
+        if not val:
+            return 2
+
 
         #if not (ProgramLogic.country, None) in FileOperation.countries_continents:
         #    return False
 
         if not (country, continent) in FileOperation.countries_continents:
-            return False
-        return True
+            return 1
+        return 0
 
 if __name__ == "__main__":
     p1 = ProgramLogic()

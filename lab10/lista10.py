@@ -5,8 +5,8 @@ from Logic import ProgramLogic
 import tkinter.messagebox
 import configparser
 import os
-import logging
 from datetime import datetime
+from tkinter import filedialog, simpledialog
 
 dane_konfig = "c:/Python/tc.txt"
 
@@ -17,17 +17,13 @@ class MainFrame(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
 
-        # pliki konfiguracyjne
-        self.config = configparser.ConfigParser()
-        self.config.read(CONFIG_FILE, "UTF8")
-
         # ustawienie rodzica
         self.parent = master
         # dzięki temu przy zamknięciu okna przez X w prawym górnym rogu program wykona funkcję file_quit
         self.parent.protocol("WM_DELETE_WINDOW", self.file_quit)
 
         # domyślne wartosci zczytane z configa
-        self.zczytaj_configa()
+        self.zczytaj_configa(CONFIG_FILE)
 
         # tworzenie menu
         self.utworz_bazowe_menu()
@@ -45,7 +41,10 @@ class MainFrame(tk.Frame):
         self.parent.rowconfigure(1, weight=9999)
         self.parent.rowconfigure(2, weight=1)
 
-    def zczytaj_configa(self):
+    def zczytaj_configa(self, path):
+        self.config = configparser.ConfigParser()
+        self.config.read(path, "UTF8")
+
         domyslne = self.config["DEFAULT"]
         self.geometria_baza = domyslne['bazowa_geometria']
         self.parent.geometry(self.geometria_baza)  # geometria
@@ -68,6 +67,7 @@ class MainFrame(tk.Frame):
         ]
 
         ProgramLogic.set_param(param_list)
+        ProgramLogic.covid_path = domyslne['covid_path']
 
     def utworz_bazowe_menu(self):
         self.menubar = tk.Menu(self.parent)  # stwórz widget menubar klasy Menu
@@ -77,25 +77,26 @@ class MainFrame(tk.Frame):
     def dodaj_menu_file(self):
         file_menu = tk.Menu(self.menubar, tearoff=0)  # tearoff decyduje, czy można oddzielić menu
         for label, command, shortcut_text, shortcut in (
-                ("New...", self.file_new, "Ctrl+N", "<Control-n>"),
-                ("Open...", self.file_open, "Ctrl+O", "<Control-o>"),
-                ("Save", self.file_save, "Ctrl+S", "<Control-s>"),
+                ("Załaduj inną konfigurację", self.load_config, "Ctrl+N", "<Control-n>"),
+                ("Zapisz konfigurację użytkownika", self.save_config, "Ctrl+S", "<Control-s>"),
+                ("Otwórz plik z danymi covid", self.open_covid, "Ctrl+O", "<Control-o>"),
+                ("Zapisz wyniki programu", self.save_result, "Ctrl+O", "<Control-o>"),
                 (None, None, None, None),
-                ("Quit", self.file_quit, "Ctrl+Q", "<Control-q>")):
+                ("Wyjdź", self.file_quit, "Ctrl+Q", "<Control-q>")):
             if label is None:
                 file_menu.add_separator()
             else:
                 file_menu.add_command(label=label, underline=0,
                                       command=command, accelerator=shortcut_text)
                 self.parent.bind(shortcut, command)
-        self.menubar.add_cascade(label="File", menu=file_menu, underline=0)
+        self.menubar.add_cascade(label="Pliki", menu=file_menu, underline=0)
 
     def dodaj_menu_help(self):
         fileMenu = tk.Menu(self.menubar, tearoff=0)
         for label, command, shortcut_text, shortcut in (
-                ("New...", self.file_new, "Ctrl+N", "<Control-n>"),
-                ("Open...", self.file_open, "Ctrl+O", "<Control-o>"),
-                ("Save", self.file_save, "Ctrl+S", "<Control-s>"),
+                ("Wyświetl pomoc", self.wyswietl_pomoc, "Ctrl+H", "<Control-h>"),
+                ("Autor", self.wyswietl_autora, "Ctrl+O", "<Control-o>"),
+                ("Licencja", self.wyswietl_licencje, "Ctrl+O", "<Control-o>"),
                 (None, None, None, None),
                 ("Quit", self.file_quit, "Ctrl+Q", "<Control-q>")):
             if label is None:
@@ -106,6 +107,26 @@ class MainFrame(tk.Frame):
                 self.parent.bind(shortcut, command)
         self.menubar.add_cascade(label="Help", menu=fileMenu, underline=0)
 
+    def wyswietl_pomoc(self):
+        top = tk.Toplevel()  # tworzy nowe okno na wierzchu
+        top.geometry = self.geometria_baza
+        top.title('Pomoc')
+        text_top = tk.Text(top)
+        text_top.insert(tk.END, "Tutaj okno pomocy\n")
+        text_top.insert(tk.END, "Tutaj znajdziesz opis wszystkich funkcji programu")
+        text_top.pack()
+
+    def wyswietl_autora(self):
+        tkinter.messagebox.showinfo("Autor", "Aplikację przygotował Dominik Tomaszewski")
+
+    def wyswietl_licencje(self):
+        tkinter.messagebox.showinfo("Licencja", "Darmowa dla użytku edukacyjnego, 2022")
+
+    def usun_wyniki(self):
+        self.robocze.t.destroy()
+        self.robocze.wynik_scrollbar.destroy()
+        self.robocze.wynik_label.destroy()
+
     def utworz_pasek_narzedzi(self):
         self.toolbar_images = []  # obrazki toolbara, muszą być pamiętane stale
         self.toolbar = tk.Frame(self.parent, background='#969696')  # tworzymy ramkę toolbar, do trzymania tam narzędzi
@@ -114,10 +135,9 @@ class MainFrame(tk.Frame):
         # lista z warunku pętli pozwala łatwo dodawać ikonki (ich ścieżkę) wraz z funkcją którą będą wywoływać
         # Kolejność ma znaczenie, bo w takiej będziemy dodawać do paska narzędzi
         for image, command in (
-                ("images/editdelete.gif", self.file_usun),
-                ("images/filenew.gif", self.file_new),
-                ("images/fileopen.gif", self.file_open),
-                ("images/filesave.gif", self.file_save)):
+                ("images/editdelete.gif", self.usun_wyniki),
+                ("images/fileopen.gif", self.open_covid),
+                ("images/filesave.gif", self.save_result)):
 
             # najpierw stworzenie absolutnej ścieżki dla naszych obrazków
             image = os.path.join(os.path.dirname(__file__), image)
@@ -154,7 +174,6 @@ class MainFrame(tk.Frame):
 
         # self.robocze.grid(row=1, column=0, columnspan=1, rowspan=1, sticky=tk.NSEW)
 
-    # Mogą się przydać, na razie nie najważniejsze
     def file_quit(self, event=None):
         # Świetny sposób na upewnienie się, czy ktoś chce zakończyć działanie programu
         # potem można się upewniać o zapis pliku itd.
@@ -166,19 +185,76 @@ class MainFrame(tk.Frame):
 
         if reply:  # jeśli faktycznie kończy to reply = True
             geometria = self.parent.winfo_geometry()
-            print(type(geometria))
             self.config["DEFAULT"]["bazowa_geometria"] = geometria
             with open(CONFIG_FILE, 'w') as konfig_plik:
                 self.config.write(konfig_plik)
             self.parent.destroy()
 
-    def file_new(self, event=None):
+    def load_config(self, event=None):
         event = event
 
-    def file_open(self, event=None):
+        filename = tk.filedialog.askopenfilename(initialdir=os.path.dirname(__file__),
+                                                 title="Wybierz plik z konfiguracją",
+                                                 filetypes=(("ini files", "*.ini"), ("all files", "*.*")))
+        try:
+            self.zczytaj_configa(filename)
+            tkinter.messagebox.showinfo("Sukces", "Pomyślnie wczytano nową konfigurację")
+        except:
+            tkinter.messagebox.showerror("Błąd", "Błąd wczytania pliku konfiguracyjnego")
+            tkinter.messagebox.showinfo("Sukces", "Nie udało się wczytać pliku konfiguracyjnego, "
+                                                 "pozostano przy poprzedniej konfiguracji")
+
+    def save_config(self, event=None):
+        save_con_path = tk.simpledialog.askstring("Utwórz konfigurację", prompt="Podaj nazwę nowej konfiguracji")
+        save_con_path = save_con_path + ".ini"
+        config_custom = configparser.ConfigParser()
+        config_custom['DEFAULT'] = {'size_x': 1000,
+                             'size_y': 800,
+                             'bazowa_geometria': self.parent.winfo_geometry(),
+                             'day_start': 1,
+                             'month_start': 1,
+                             'year_start': 2020,
+                             'day_end': 31,
+                             'month_end': 12,
+                             'year_end': 2020,
+                             'country': 'Poland',
+                             'continent': 'Europe',
+                             'data_select_type': 1,
+                             'cases_type': 1,
+                             'sort_type': 1,
+                             'reverse_sort_flag': False,
+                             'total_flag': False,
+                             'glowna_nazwa': "Coronavirus Program",
+                             'covid_path': "Covid.txt"}
+
+        config_custom.write(open(save_con_path, "w"))
+
+        tkinter.messagebox.showinfo("Sukces", "Pomyślnie zapisano konfigurację użytkownika")
+
         event = event
 
-    def file_save(self, event=None):
+    def open_covid(self, event=None):
+        filename = tk.filedialog.askopenfilename(initialdir=os.path.dirname(__file__), title="Wybierz plik z covid",
+                                                 filetypes=(("txt files", "*.txt"), ("all files", "*.*")))
+        ProgramLogic.covid_path = filename
+
+        event = event
+
+    def save_result(self, event=None):
+        reply = True
+
+        print(os.path.exists("logs.txt"))
+        # tkinter.simpledialog.askstring(title, prompt, **kw)¶
+
+        if os.path.exists("logs.txt"):
+            reply = tkinter.messagebox.askyesno("Pytanie", "Znaleziono już plik z logami. Czy chcesz go nadpisać?")
+
+        if reply:
+            ProgramLogic.prepare_result()
+            tkinter.messagebox.showinfo("Zapis", "Wyniki zapisano do pliku logs.txt")
+        else:
+            tkinter.messagebox.showinfo("Zapis", "Anulowano zapis wyników do pliku")
+
         event = event
 
     def file_usun(self):
@@ -360,6 +436,7 @@ class WorkingWindow(tk.Frame):
 
         self.t = tk.Text(self.frame_wynikow)
         self.wynik_scrollbar = tk.Scrollbar(self.frame_wynikow)
+        self.wynik_label = tk.Label(self.frame_wynikow)
 
         # if jeśli sortowania odwrocone, wszystkie wyniki itp zeby wyswietlic
 
@@ -402,7 +479,6 @@ class WorkingWindow(tk.Frame):
         ProgramLogic.set_param(param_list)
         ProgramLogic.default_steps()
 
-
         self.odswiez_okno_wynikow()
         print("Klinieto Start button")
 
@@ -410,14 +486,22 @@ class WorkingWindow(tk.Frame):
         error_text = ""
 
         # czy data przed nie jest po dacie po
-        first = int(self.start_month_text.get()) * 1000 + int(self.start_day_text.get())
-        second = int(self.end_month_text.get()) * 1000 + int(self.end_day_text.get())
+        #obsługa wyjątku gdy nie wpisano inta
+        try:
+            first = int(self.start_month_text.get()) * 1000 + int(self.start_day_text.get())
+            second = int(self.end_month_text.get()) * 1000 + int(self.end_day_text.get())
+        except:
+            tkinter.messagebox.showerror("Błąd", "Niepoprawne dane wpisane w polach dat")
+            return False
 
-        print(first)
-        print(second)
+        print(ProgramLogic.covid_path)
+
+        if not os.path.exists(ProgramLogic.covid_path):
+            tkinter.messagebox.showerror("Błąd", "Nie znaleziono pliku z danymi o podanej ścieżce")
+            return False
 
         if first > second:
-            tkinter.messagebox.showerror("Błąd","Podana data startowa jest późniejsza od końcowej")
+            tkinter.messagebox.showerror("Błąd", "Podana data startowa jest późniejsza od końcowej")
             return False
 
         # sprawdz poprawność daty
@@ -434,19 +518,23 @@ class WorkingWindow(tk.Frame):
             return False
 
         # czy dany kraj jest na danym kontynencie
-        if not ProgramLogic.check_country_and_continent(self.country_text.get(), self.contintent_text.get()):
-            tkinter.messagebox.showerror("Błąd", "Danego kraju nie ma na danym Kontynencie")
+        val = ProgramLogic.check_country_and_continent(self.country_text.get(), self.contintent_text.get())
+
+        if val == 1:
+            tkinter.messagebox.showerror("Błąd",
+                                         "Danego kraju nie ma na danym Kontynencie/nie znaleziono takiego kraju")
             return False
-
-
-
-
+        elif val == 2:
+            tkinter.messagebox.showerror("Błąd",
+                                         "Wystąpił błąd przy próbie odczytu pliku")
+            return False
         return True
 
     def odswiez_okno_wynikow(self):
         # usun poprzednie okno
         self.t.destroy()
         self.wynik_scrollbar.destroy()
+        self.wynik_label.destroy()
 
         # zakutalizuj ustawienia
         now = datetime.now()
@@ -478,29 +566,38 @@ class WorkingWindow(tk.Frame):
         self.act_set_var.set(act_set)
 
         self.wynik_scrollbar = tk.Scrollbar(self.frame_wynikow)
-        self.wynik_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
 
         self.t = tk.Text(self.frame_wynikow, wrap=tk.NONE,
-                    yscrollcommand=self.wynik_scrollbar.set)
+                         yscrollcommand=self.wynik_scrollbar.set)
 
-        self.t.pack(fill=tk.BOTH)
+        self.wynik_label = tk.Label(self.frame_wynikow, text="Suma przypadków: ")
 
-        for el in ProgramLogic.covid_list:
-            if ProgramLogic.cases_type == 1:
-                text = "{:10d}".format(el[4]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
-            else:
-                text = "{:10d}".format(el[5]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
-            self.t.insert(tk.END, text + "\n")
+        if ProgramLogic.cases_type == 1:
+            index = 4
+        else:
+            index = 5
 
+        if ProgramLogic.total_flag:
+            sum = 0
+            for el in ProgramLogic.covid_list:
+                sum += el[index]
+                self.wynik_label['text'] = "Suma przypadków: " + str(sum)
+            self.wynik_label.pack()
+        else:
+            for el in ProgramLogic.covid_list:
+                if ProgramLogic.cases_type == 1:
+                    text = "{:10d}".format(el[4]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
+                else:
+                    text = "{:10d}".format(el[5]) + ", " + "{:02d}".format(el[0]) + "." + "{:02d}".format(el[1]) + ".2020"
+                self.t.insert(tk.END, text + "\n")
 
+            self.wynik_scrollbar.config(command=self.t.yview)
 
-        self.wynik_scrollbar.config(command=self.t.yview)
+            self.t['state'] = tk.DISABLED
 
-        self.t['state'] = tk.DISABLED
-
-
-def logger():
-    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+            self.wynik_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            self.t.pack(fill=tk.BOTH)
 
 
 def tworz_configfile():
@@ -523,7 +620,8 @@ def tworz_configfile():
                              'sort_type': 1,
                              'reverse_sort_flag': False,
                              'total_flag': False,
-                             'glowna_nazwa': "Coronavirus Program"}
+                             'glowna_nazwa': "Coronavirus Program",
+                             'covid_path': "Covid.txt"}
         with open(CONFIG_FILE, 'w') as configfile:
             config.write(configfile)
     else:
@@ -531,7 +629,6 @@ def tworz_configfile():
 
 
 if __name__ == '__main__':
-    logger()
     tworz_configfile()
 
     root = tk.Tk()
