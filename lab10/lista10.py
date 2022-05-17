@@ -26,9 +26,6 @@ class MainFrame(tk.Frame):
         # dzięki temu przy zamknięciu okna przez X w prawym górnym rogu program wykona funkcję file_quit
         self.parent.protocol("WM_DELETE_WINDOW", self.file_quit)
 
-        # obiekt ProgramLogic do obsługi logiki programu
-        self.logic = ProgramLogic()
-
         # domyślne wartosci zczytane z configa
         self.zczytaj_configa()
 
@@ -57,15 +54,20 @@ class MainFrame(tk.Frame):
 
         # zczytanie parametrów do obiektu logic
         param_list = [
-            domyslne['day_start'],
-            domyslne['day_end'],
-            domyslne['month_start'],
-            domyslne['month_end'],
+            int(domyslne['day_start']),
+            int(domyslne['day_end']),
+            int(domyslne['month_start']),
+            int(domyslne['month_end']),
             domyslne['country'],
             domyslne['continent'],
+            int(domyslne['data_select_type']),
+            int(domyslne['cases_type']),
+            int(domyslne['sort_type']),
+            domyslne['reverse_sort_flag'],
+            domyslne['total_flag'],
         ]
 
-        self.logic.set_param(param_list)
+        ProgramLogic.set_param(param_list)
 
     def utworz_bazowe_menu(self):
         self.menubar = tk.Menu(self.parent)  # stwórz widget menubar klasy Menu
@@ -272,8 +274,9 @@ class WorkingWindow(tk.Frame):
 
         self.cb1 = tk.IntVar()
         self.cb2 = tk.IntVar()
-        # self.checkbox1 = tk.Checkbutton(self.frame_boxy, variable=self.cb1, text="Czy sortować po dacie?", onvalue=1, offvalue=0, command=self.funkcje_boxa)
-        # self.checkbox1.grid(column=0, row=0)
+        self.checkbox1 = tk.Checkbutton(self.frame_boxy, variable=self.cb1, text="Czy zsumować dane?", onvalue=1,
+                                        offvalue=0, command=self.funkcje_boxa)
+        self.checkbox1.grid(column=0, row=0)
         self.checkbox2 = tk.Checkbutton(self.frame_boxy, variable=self.cb2, text="Sortowanie odwrotne", onvalue=1,
                                         offvalue=0, command=self.funkcje_boxa)
         self.checkbox2.grid(column=0, row=1)
@@ -310,6 +313,7 @@ class WorkingWindow(tk.Frame):
         }
 
         self.combobox_value = tk.StringVar()
+        print(type(ProgramLogic.data_select_type))
         self.combobox_value.set(choose_name_dic[ProgramLogic.data_select_type])
 
         self.cb = ttk.Combobox(self.frame_combobox, textvariable=self.combobox_value)
@@ -377,6 +381,10 @@ class WorkingWindow(tk.Frame):
     def funkcje_start_button(self):
         # posprawdzaj czy dobrze powprowadzane
 
+        if not self.sprawdz_poprawnosc():
+            return
+
+        print("Dodaje param")
         param_list = [
             int(self.start_day_text.get()),
             int(self.end_day_text.get()),
@@ -384,13 +392,56 @@ class WorkingWindow(tk.Frame):
             int(self.end_month_text.get()),
             self.country_text.get(),
             self.contintent_text.get(),
+            1,  # Data select type
+            self.radio_cases_var.get(),
+            self.radio_sort_var.get(),
+            self.cb2.get(),
+            self.cb1.get()
         ]
 
         ProgramLogic.set_param(param_list)
         ProgramLogic.default_steps()
 
+
         self.odswiez_okno_wynikow()
         print("Klinieto Start button")
+
+    def sprawdz_poprawnosc(self):
+        error_text = ""
+
+        # czy data przed nie jest po dacie po
+        first = int(self.start_month_text.get()) * 1000 + int(self.start_day_text.get())
+        second = int(self.end_month_text.get()) * 1000 + int(self.end_day_text.get())
+
+        print(first)
+        print(second)
+
+        if first > second:
+            tkinter.messagebox.showerror("Błąd","Podana data startowa jest późniejsza od końcowej")
+            return False
+
+        # sprawdz poprawność daty
+        try:
+            newDate = datetime(2020, int(self.start_month_text.get()), int(self.start_day_text.get()))
+        except ValueError:
+            tkinter.messagebox.showerror("Błąd", "Podana data startowa jest nieprawidłowa")
+            return False
+
+        try:
+            newDate = datetime(2020, int(self.end_month_text.get()), int(self.end_day_text.get()))
+        except ValueError:
+            tkinter.messagebox.showerror("Błąd", "Podana data końcowa jest nieprawidłowa")
+            return False
+
+        # czy dany kraj jest na danym kontynencie
+        if not ProgramLogic.check_country_and_continent(self.country_text.get(), self.contintent_text.get()):
+            tkinter.messagebox.showerror("Błąd", "Danego kraju nie ma na danym Kontynencie")
+            return False
+
+
+
+
+        return True
 
     def odswiez_okno_wynikow(self):
         # usun poprzednie okno
@@ -486,3 +537,10 @@ if __name__ == '__main__':
     root = tk.Tk()
     app = MainFrame(master=root)
     app.mainloop()
+
+    # dodaj opcję sumowania
+    # niech przyciski i menu coś robią
+    # na dole pasek niech coś wyświetla
+    # jak styknie czasu dodać sprawdzanie kraju
+    # i oczywiście sprawdzanie ścieżek, może być ważne, ścieżka ini, covidowa z info,
+    # wyszarzanie pól po wybraniu comboboxa

@@ -7,6 +7,7 @@ COVID_PATH = r"C:\Users\Dominik\PycharmProjects\JezykiSkryptowe\lab10\Covid.txt"
 
 class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
     conditions_tuple = []
+    countries_continents = []
 
     def __init__(self, conditions_tuple):
         FileOperation.conditions_tuple = conditions_tuple
@@ -19,6 +20,8 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
             print("nie znaleziono pliku o podanej ścieżce")
             return []
 
+        FileOperation.countries_continents = []
+
         with open(path, encoding='utf8') as f:
             next(f)
             for line in f:
@@ -26,13 +29,16 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
 
                 if len(line_list) > 9:
                     act_tuple = (int(line_list[1]), int(line_list[2]), line_list[6],
-                                 line_list[10], int(line_list[4]), int(line_list[5]))
+                                 line_list[10], int(line_list[4]), int(line_list[5]), line_list[0])
+
+                    FileOperation.countries_continents.append((line_list[6], line_list[10]))
 
                     a = FileOperation.tuple_meets_conditions(act_tuple)
 
                     if FileOperation.tuple_meets_conditions(act_tuple):
                         covid_list.append(act_tuple)
 
+        FileOperation.countries_continents = set(FileOperation.countries_continents)
         return covid_list
 
     @classmethod
@@ -90,6 +96,28 @@ class FileOperation:  # do operacji na plikach odczytu z covid i zapisu logow
         f.write("\n------------------")
         f.close()
 
+    @classmethod
+    def load_countries_and_continents(cls, path):
+        if not os.path.exists(path):
+            print("nie znaleziono pliku o podanej ścieżce")
+            return
+
+        FileOperation.countries_continents = []
+
+        with open(path, encoding='utf8') as f:
+            next(f)
+            for line in f:
+                line_list = line.split()
+
+                if len(line_list) > 9:
+                    act_tuple = (int(line_list[1]), int(line_list[2]), line_list[6],
+                                 line_list[10], int(line_list[4]), int(line_list[5]), line_list[0])
+
+                    FileOperation.countries_continents.append((line_list[6], line_list[10]))
+
+        FileOperation.countries_continents = set(FileOperation.countries_continents)
+        print(FileOperation.countries_continents)
+
 
 class ProgramLogic:
     day_start = -1
@@ -137,6 +165,7 @@ class ProgramLogic:
     def default_steps(cls):
         ProgramLogic.create_result()
         ProgramLogic.prepare_result()
+        ProgramLogic.sort_list()
 
     @classmethod
     def set_param(cls, params):
@@ -146,6 +175,13 @@ class ProgramLogic:
         ProgramLogic.month_end = params[3]
         ProgramLogic.country = params[4]
         ProgramLogic.continent = params[5]
+        ProgramLogic.data_select_type = params[6]
+        ProgramLogic.cases_type = params[7]
+        ProgramLogic.sort_type = params[8]
+        ProgramLogic.reverse_sort_flag = params[9]
+        ProgramLogic.total_flag = params[10]
+        print("Param dodany")
+        print("ProgramLogic.country = ", ProgramLogic.country)
 
         ProgramLogic.set_conditions_tuple()
 
@@ -160,8 +196,29 @@ class ProgramLogic:
             ProgramLogic.continent
         ])
 
+    @classmethod
+    def sort_list(cls):
+        if ProgramLogic.sort_type == 1:
+            ProgramLogic.covid_list.sort(key=lambda date: datetime.strptime(date[6], "%d.%m.%Y"),
+                                         reverse=ProgramLogic.reverse_sort_flag)
+        else:
+            if ProgramLogic.cases_type == 1:
+                ProgramLogic.covid_list.sort(key=lambda el: el[4], reverse=ProgramLogic.reverse_sort_flag)
+            else:
+                ProgramLogic.covid_list.sort(key=lambda el: el[5], reverse=ProgramLogic.reverse_sort_flag)
+
+    @classmethod
+    def check_country_and_continent(cls, country, continent):
+        FileOperation.load_countries_and_continents(COVID_PATH)
+
+        #if not (ProgramLogic.country, None) in FileOperation.countries_continents:
+        #    return False
+
+        if not (country, continent) in FileOperation.countries_continents:
+            return False
+        return True
 
 if __name__ == "__main__":
     p1 = ProgramLogic()
-    ProgramLogic.set_param([1, 30, 11, 11, 'Afghanistan', 'Asia'])
+    ProgramLogic.set_param([1, 30, 11, 11, 'Afghanistan', 'Asia', 1, 1, 1, False, False])
     ProgramLogic.default_steps()
